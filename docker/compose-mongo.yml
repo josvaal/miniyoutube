@@ -4,16 +4,30 @@ services:
     container_name: mongodb
     restart: unless-stopped
     environment:
-      - MONGO_INITDB_DATABASE=miniyoutube
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME:-user}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE:-miniyoutube}
     networks:
       - miniyoutube_net
     ports:
-      - "27017:27017"
+      - "${MONGODB_PORT:-27017}:27017"
     volumes:
       - mongo_data:/data/db-mongo-data
-    command: "mongod --quiet --logpath /dev/null "
+    command: "mongod --quiet --logpath /dev/null"
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--eval",
+          "db.adminCommand('ping')",
+          "-u",
+          "${MONGODB_USERNAME:-user}",
+          "-p",
+          "${MONGODB_PASSWORD:-password}",
+          "--authenticationDatabase",
+          "admin",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
