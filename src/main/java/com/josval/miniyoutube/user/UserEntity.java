@@ -1,4 +1,4 @@
-package com.josval.miniyoutube.users.model;
+package com.josval.miniyoutube.user;
 
 import java.util.Date;
 import lombok.AllArgsConstructor;
@@ -10,21 +10,22 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Getter @Setter
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "users")
 public class UserEntity {
-    @Id
-    private String id;
-    @Indexed(unique = true)
-    private String username;
-    @Indexed(unique = true)
-    private String email;
-    private String password;
-    private String channelName;
-    private String avatarURL;
-    
-    @CreatedDate
-    private Date createdAt;
+  @Id
+  private String id;
+  @Indexed(unique = true)
+  private String username;
+  @Indexed(unique = true)
+  private String email;
+  private String password;
+  private String channelName;
+  private String avatarURL;
+
+  @CreatedDate
+  private Date createdAt;
 }
