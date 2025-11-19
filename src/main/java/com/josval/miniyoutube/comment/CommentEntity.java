@@ -1,4 +1,4 @@
-package com.josval.miniyoutube.document;
+package com.josval.miniyoutube.comment;
 
 import java.util.Date;
 
@@ -19,8 +19,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "documentos")
-public class DocumentEntity {
+@Document(collection = "comentarios")
+public class CommentEntity {
   @MongoId
   private String id;
 
@@ -33,7 +33,7 @@ public class DocumentEntity {
   private String body;
 
   @DBRef(lazy = true)
-  private DocumentEntity parent;
+  private CommentEntity parent;
 
   @CreatedDate
   private Date createdAt;
