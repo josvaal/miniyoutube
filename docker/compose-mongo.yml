@@ -13,7 +13,7 @@ services:
       - mongo_data:/data/db-mongo-data
     command: "mongod --quiet --logpath /dev/null "
     healthcheck:
-      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
