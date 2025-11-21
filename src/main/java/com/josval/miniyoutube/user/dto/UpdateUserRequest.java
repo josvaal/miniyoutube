@@ -10,11 +10,14 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginRequest {
+public class UpdateUserRequest {
+
+  @Schema(description = "Nombre de usuario", example = "josval")
+  private String username;
 
   @Schema(description = "Email del usuario", example = "josval.personal@gmail.com")
   private String email;
 
-  @Schema(description = "Contraseña del usuario", example = "15022004")
-  private String password;
+  @Schema(description = "Nombre del canal", example = "Canal de Josval")
+  private String channelName;
 }

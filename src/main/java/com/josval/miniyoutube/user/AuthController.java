@@ -4,6 +4,8 @@ import com.josval.miniyoutube.user.dto.LoginRequest;
 import com.josval.miniyoutube.user.dto.LoginResponse;
 import com.josval.miniyoutube.user.dto.RegisterRequest;
 import com.josval.miniyoutube.user.dto.UserResponse;
+
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +30,7 @@ public class AuthController {
     }
   }
 
+  @Operation(summary = "Inicio de sesion", description = "Inicio de sesion con correo y contraseña")
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
     try {

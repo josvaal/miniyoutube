@@ -1,9 +1,11 @@
 package com.josval.miniyoutube.user;
 
 import com.josval.miniyoutube.security.JwtService;
+import com.josval.miniyoutube.service.S3Service;
 import com.josval.miniyoutube.user.dto.LoginRequest;
 import com.josval.miniyoutube.user.dto.LoginResponse;
 import com.josval.miniyoutube.user.dto.RegisterRequest;
+import com.josval.miniyoutube.user.dto.UpdateUserRequest;
 import com.josval.miniyoutube.user.dto.UserResponse;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,7 @@ public class UserService implements UserDetailsService {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
+  private final S3Service s3Service;
 
   @Override
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -105,6 +109,51 @@ public class UserService implements UserDetailsService {
     }
     if (userResponse.getAvatarURL() != null) {
       user.setAvatarURL(userResponse.getAvatarURL());
+    }
+
+    UserEntity updatedUser = userRepository.save(user);
+    return mapToUserResponse(updatedUser);
+  }
+
+  public UserResponse updateCurrentUser(String email, UpdateUserRequest request, MultipartFile avatar) {
+    UserEntity user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    // Validar username único si se está actualizando
+    if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+      if (userRepository.existsByUsername(request.getUsername())) {
+        throw new RuntimeException("El username ya está en uso");
+      }
+      user.setUsername(request.getUsername());
+    }
+
+    // Validar email único si se está actualizando
+    if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+      if (userRepository.existsByEmail(request.getEmail())) {
+        throw new RuntimeException("El email ya está registrado");
+      }
+      user.setEmail(request.getEmail());
+    }
+
+    // Actualizar channelName
+    if (request.getChannelName() != null) {
+      user.setChannelName(request.getChannelName());
+    }
+
+    // Subir avatar a S3 si se proporciona
+    if (avatar != null && !avatar.isEmpty()) {
+      // Eliminar avatar anterior si existe
+      if (user.getAvatarURL() != null && !user.getAvatarURL().isEmpty()) {
+        try {
+          s3Service.deleteFile(user.getAvatarURL());
+        } catch (Exception e) {
+          // Log error but continue
+        }
+      }
+
+      // Subir nuevo avatar
+      String avatarUrl = s3Service.uploadFile(avatar, "avatar");
+      user.setAvatarURL(avatarUrl);
     }
 
     UserEntity updatedUser = userRepository.save(user);
