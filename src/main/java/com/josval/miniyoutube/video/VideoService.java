@@ -25,6 +25,7 @@ public class VideoService {
   private final VideoRepository videoRepository;
   private final UserRepository userRepository;
   private final VideoProcessingService videoProcessingService;
+  private final VideoViewRepository videoViewRepository;
 
   /**
    * Listar videos públicos completados, paginado y ordenado por fecha más reciente
@@ -117,14 +118,33 @@ public class VideoService {
 
   /**
    * Obtener información de un video por ID
+   * Solo incrementa el contador de vistas si el usuario no ha visto el video antes
    */
-  public VideoResponse getVideoById(String videoId) {
+  public VideoResponse getVideoById(String videoId, String userEmail) {
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
 
-    // Incrementar contador de vistas
-    video.setViews_count(video.getViews_count() != null ? video.getViews_count() + 1 : 1);
-    videoRepository.save(video);
+    // Solo incrementar vistas si el usuario está autenticado y no ha visto el video antes
+    if (userEmail != null) {
+      UserEntity user = userRepository.findByEmail(userEmail).orElse(null);
+
+      if (user != null) {
+        String userId = user.getId();
+
+        // Verificar si el usuario ya vio este video
+        boolean alreadyViewed = videoViewRepository.existsByUserIdAndVideoId(userId, videoId);
+
+        if (!alreadyViewed) {
+          // Registrar la vista
+          VideoView view = new VideoView(userId, videoId);
+          videoViewRepository.save(view);
+
+          // Incrementar contador de vistas
+          video.setViews_count(video.getViews_count() != null ? video.getViews_count() + 1 : 1);
+          videoRepository.save(video);
+        }
+      }
+    }
 
     return mapToResponse(video);
   }

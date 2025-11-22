@@ -78,14 +78,21 @@ public class VideoController {
 
   @Operation(
       summary = "Ver video",
-      description = "Obtiene la información de un video específico, incluyendo URL del manifest HLS para streaming. Incrementa el contador de vistas."
+      description = "Obtiene la información de un video específico, incluyendo URL del manifest HLS para streaming. Incrementa el contador de vistas únicamente si el usuario autenticado no ha visto el video antes."
   )
   @GetMapping("/{id}")
   public ResponseEntity<VideoResponse> getVideo(
       @Parameter(description = "ID del video") @PathVariable String id
   ) {
     try {
-      VideoResponse video = videoService.getVideoById(id);
+      // Obtener usuario autenticado (puede ser null si no está autenticado)
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String userEmail = null;
+      if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+        userEmail = authentication.getName();
+      }
+
+      VideoResponse video = videoService.getVideoById(id, userEmail);
       return ResponseEntity.ok(video);
     } catch (RuntimeException e) {
       return ResponseEntity.notFound().build();
