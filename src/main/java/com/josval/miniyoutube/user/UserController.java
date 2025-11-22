@@ -36,7 +36,6 @@ public class UserController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "Actualizar usuario actual", description = "Actualiza los datos del usuario autenticado, incluyendo avatar")
   @PutMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<UserResponse> updateCurrentUser(
       @Parameter(description = "Nombre de usuario (opcional)") @RequestPart(value = "username", required = false) String username,
