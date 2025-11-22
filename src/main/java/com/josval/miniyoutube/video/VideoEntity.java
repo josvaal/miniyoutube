@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import com.josval.miniyoutube.user.UserEntity;
 import com.josval.miniyoutube.video.enums.VideoPrivacyStatus;
+import com.josval.miniyoutube.video.enums.VideoProcessingStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -38,6 +39,12 @@ public class VideoEntity {
   private Integer views_count;
   private Integer likes_count;
   private Integer dislikes_count;
+
+  // HLS streaming fields
+  private VideoProcessingStatus processingStatus;
+  private String hlsManifestUrl;  // URL del archivo .m3u8 master
+  private String originalVideoUrl;  // Video original sin procesar
+  private Collection<String> availableQualities;  // Calidades disponibles: ["360p", "480p", ...]
 
   @CreatedDate
   private Date createdAt;

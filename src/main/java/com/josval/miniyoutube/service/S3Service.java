@@ -1,6 +1,8 @@
 package com.josval.miniyoutube.service;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,34 @@ public class S3Service {
       // Retornar URL del archivo
       return getFileUrl(key);
     } catch (IOException e) {
+      throw new RuntimeException("Error al subir archivo a S3: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Subir archivo File directamente a S3
+   */
+  public String uploadFile(File file, String folder, String contentType) {
+    try {
+      // Generar nombre único para el archivo
+      String fileName = generateFileName(file.getName());
+      String key = folder + "/" + fileName;
+
+      // Subir archivo a S3
+      PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+          .bucket(s3BucketName)
+          .key(key)
+          .contentType(contentType)
+          .build();
+
+      s3Client.putObject(
+          putObjectRequest,
+          RequestBody.fromFile(file)
+      );
+
+      // Retornar URL del archivo
+      return getFileUrl(key);
+    } catch (Exception e) {
       throw new RuntimeException("Error al subir archivo a S3: " + e.getMessage(), e);
     }
   }
