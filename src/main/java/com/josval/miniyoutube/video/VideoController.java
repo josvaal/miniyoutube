@@ -30,9 +30,16 @@ public class VideoController {
 
   @GetMapping
   public ResponseEntity<Page<VideoResponse>> listPublicVideos(
-      @Parameter(description = "Número de página (empezando en 0)") @RequestParam(defaultValue = "0") int page,
-      @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "10") int size) {
-    Page<VideoResponse> videos = videoService.listPublicVideos(page, size);
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    // Obtener usuario autenticado si existe
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = null;
+    if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+      userEmail = authentication.getName();
+    }
+
+    Page<VideoResponse> videos = videoService.listPublicVideos(userEmail, page, size);
     return ResponseEntity.ok(videos);
   }
 
@@ -115,10 +122,49 @@ public class VideoController {
 
   @GetMapping("/{videoId}/comments")
   public ResponseEntity<Page<CommentResponse>> listVideoComments(
-      @Parameter(description = "ID del video") @PathVariable String videoId,
-      @Parameter(description = "Número de página (empezando en 0)") @RequestParam(defaultValue = "0") int page,
-      @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "20") int size) {
+      @PathVariable String videoId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
     Page<CommentResponse> comments = commentService.listVideoComments(videoId, page, size);
     return ResponseEntity.ok(comments);
+  }
+
+  @PostMapping("/{videoId}/like")
+  public ResponseEntity<Void> likeVideo(@PathVariable String videoId) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+
+    try {
+      videoService.likeVideo(videoId, userEmail);
+      return ResponseEntity.ok().build();
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @PostMapping("/{videoId}/dislike")
+  public ResponseEntity<Void> dislikeVideo(@PathVariable String videoId) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+
+    try {
+      videoService.dislikeVideo(videoId, userEmail);
+      return ResponseEntity.ok().build();
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  @DeleteMapping("/{videoId}/reaction")
+  public ResponseEntity<Void> removeReaction(@PathVariable String videoId) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+
+    try {
+      videoService.removeReaction(videoId, userEmail);
+      return ResponseEntity.noContent().build();
+    } catch (RuntimeException e) {
+      return ResponseEntity.badRequest().build();
+    }
   }
 }
