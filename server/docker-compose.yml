@@ -62,7 +62,12 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
       # MongoDB Configuration
-      MONGODB_URI: mongodb://${MONGODB_USERNAME:-admin}:${MONGODB_PASSWORD:-admin123}@mongodb:27017/${MONGODB_DATABASE:-miniyoutube}?authSource=admin
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-miniyoutube}
+      MONGODB_USERNAME: ${MONGODB_USERNAME:-admin}
+      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-admin123}
+      MONGODB_AUTH_DATABASE: admin
 
       # AWS S3 Configuration (LocalStack)
       AWS_S3_ENDPOINT: http://localstack:4566
