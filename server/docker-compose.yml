@@ -1,0 +1,97 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: miniyoutube-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-admin123}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-miniyoutube}
+    networks:
+      - miniyoutube-network
+    ports:
+      - "${MONGODB_PORT:-27017}:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_USERNAME:-admin}", "-p", "${MONGODB_PASSWORD:-admin123}", "--authenticationDatabase", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # LocalStack for S3 (file storage)
+  localstack:
+    image: localstack/localstack:latest
+    container_name: miniyoutube-localstack
+    restart: unless-stopped
+    environment:
+      SERVICES: s3
+      DEBUG: ${DEBUG:-0}
+      PERSISTENCE: 1
+      DATA_DIR: /var/lib/localstack/data
+    networks:
+      - miniyoutube-network
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Spring Boot Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: miniyoutube-api
+    restart: unless-stopped
+    environment:
+      # Spring Configuration
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+      # MongoDB Configuration
+      MONGODB_URI: mongodb://${MONGODB_USERNAME:-admin}:${MONGODB_PASSWORD:-admin123}@mongodb:27017/${MONGODB_DATABASE:-miniyoutube}?authSource=admin
+
+      # AWS S3 Configuration (LocalStack)
+      AWS_S3_ENDPOINT: http://localstack:4566
+      AWS_S3_REGION: ${AWS_S3_REGION:-us-east-1}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-miniyoutube}
+      AWS_S3_ACCESS_KEY: ${AWS_S3_ACCESS_KEY:-test}
+      AWS_S3_SECRET_KEY: ${AWS_S3_SECRET_KEY:-test}
+    networks:
+      - miniyoutube-network
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  mongodb_data:
+    driver: local
+  localstack_data:
+    driver: local
+
+networks:
+  miniyoutube-network:
+    driver: bridge
