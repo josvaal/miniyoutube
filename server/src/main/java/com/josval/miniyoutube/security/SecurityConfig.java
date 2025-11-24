@@ -34,6 +34,7 @@ public class SecurityConfig {
             .requestMatchers("/api/auth/**").permitAll()
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/videos", "/api/videos/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/stream/**").permitAll()
             .anyRequest().authenticated()
         )
         .sessionManagement(session -> session

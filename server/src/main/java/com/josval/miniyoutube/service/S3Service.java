@@ -48,8 +48,14 @@ public class S3Service {
    */
   public String uploadFile(File file, String folder, String contentType) {
     try {
-      // Generar nombre único para el archivo
-      String fileName = generateFileName(file.getName());
+      // Para archivos HLS (m3u8 y ts), mantener el nombre original
+      // Para otros archivos, generar nombre único
+      String fileName;
+      if (folder.contains("/hls") && (file.getName().endsWith(".m3u8") || file.getName().endsWith(".ts"))) {
+        fileName = file.getName(); // Mantener nombre original para HLS
+      } else {
+        fileName = generateFileName(file.getName()); // UUID para otros archivos
+      }
       String key = folder + "/" + fileName;
 
       // Subir archivo a S3
@@ -80,8 +86,9 @@ public class S3Service {
   }
 
   private String getFileUrl(String key) {
-    // Para LocalStack, la URL será: http://localhost:4566/bucket-name/key
-    return String.format("http://localhost:4566/%s/%s", s3BucketName, key);
+    // Generar URL que apunta al endpoint de streaming del backend
+    // El frontend accederá a través del proxy del backend: http://localhost:8080/api/stream/key
+    return String.format("http://localhost:8080/api/stream/%s", key);
   }
 
   public void deleteFile(String fileUrl) {
@@ -104,7 +111,17 @@ public class S3Service {
     if (fileUrl == null || fileUrl.isEmpty()) {
       return null;
     }
-    // Extraer el key de una URL como: http://localhost:4566/bucket-name/folder/file.jpg
+    // Extraer el key de una URL como: http://localhost:8080/api/stream/folder/file.jpg
+    if (fileUrl.contains("/api/stream/")) {
+      String[] parts = fileUrl.split("/api/stream/");
+      return parts.length > 1 ? parts[1] : null;
+    }
+    // Fallback para URLs con query params
+    if (fileUrl.contains("?path=")) {
+      String[] parts = fileUrl.split("\\?path=");
+      return parts.length > 1 ? parts[1] : null;
+    }
+    // Fallback para URLs antiguas de LocalStack
     String[] parts = fileUrl.split(s3BucketName + "/");
     return parts.length > 1 ? parts[1] : null;
   }
