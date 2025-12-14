@@ -21,17 +21,6 @@ public class CommentController {
 
   private final CommentService commentService;
 
-  @PostMapping("/{videoId}")
-  public ResponseEntity<CommentResponse> createComment(
-      @Parameter(description = "ID del video") @PathVariable String videoId,
-      @Valid @RequestBody CreateCommentRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    String userEmail = authentication.getName();
-
-    CommentResponse comment = commentService.createComment(videoId, userEmail, request);
-    return ResponseEntity.ok(comment);
-  }
-
   @GetMapping("/{commentId}/replies")
   public ResponseEntity<Page<CommentResponse>> listCommentReplies(
       @Parameter(description = "ID del comentario") @PathVariable String commentId,

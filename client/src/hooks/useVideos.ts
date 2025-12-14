@@ -25,10 +25,6 @@ interface Video {
   views_count?: number;
   likes_count?: number;
   dislikes_count?: number;
-  likedByCurrentUser?: boolean;
-  dislikedByCurrentUser?: boolean;
-  lastViewedAt?: string;
-  reactedAt?: string;
 }
 
 export type VideoPrivacyStatus = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
@@ -81,64 +77,12 @@ export function useVideos(page: number = 0, size: number = 12) {
   });
 }
 
-// Historial del usuario autenticado
-const fetchHistory = async (token: string, page: number = 0, size: number = 12): Promise<PageResponse<Video>> => {
-  const response = await fetch(`${API_URL}/videos/history?page=${page}&size=${size}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Error al obtener el historial');
-  }
-
-  return response.json();
-};
-
-// Videos con like del usuario autenticado
-const fetchLiked = async (token: string, page: number = 0, size: number = 12): Promise<PageResponse<Video>> => {
-  const response = await fetch(`${API_URL}/videos/liked?page=${page}&size=${size}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Error al obtener videos con like');
-  }
-
-  return response.json();
-};
-
 // Hook para obtener un video específico
 export function useVideo(id: string) {
   return useQuery({
     queryKey: ['videos', id],
     queryFn: () => fetchVideoById(id),
     enabled: !!id, // Solo ejecuta la query si hay un ID
-  });
-}
-
-// Historial del usuario autenticado
-export function useHistoryVideos(page: number = 0, size: number = 12) {
-  const { token } = useAuthContext();
-
-  return useQuery({
-    queryKey: ['history', page, size],
-    queryFn: () => fetchHistory(token!, page, size),
-    enabled: !!token,
-  });
-}
-
-// Videos con like del usuario autenticado
-export function useLikedVideos(page: number = 0, size: number = 12) {
-  const { token } = useAuthContext();
-
-  return useQuery({
-    queryKey: ['liked', page, size],
-    queryFn: () => fetchLiked(token!, page, size),
-    enabled: !!token,
   });
 }
 

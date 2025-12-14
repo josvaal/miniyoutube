@@ -29,8 +29,6 @@ public class VideoService {
   private final VideoViewRepository videoViewRepository;
   private final com.josval.miniyoutube.subscription.SubscriptionRepository subscriptionRepository;
   private final VideoReactionRepository videoReactionRepository;
-  private final com.josval.miniyoutube.audit.AuditService auditService;
-  private final com.josval.miniyoutube.common.RateLimiterService rateLimiterService;
 
   /**
    * Listar videos públicos completados, paginado y ordenado por fecha más reciente
@@ -140,66 +138,9 @@ public class VideoService {
   }
 
   /**
-   * Historial de reproducciones del usuario autenticado
-   */
-  public Page<VideoResponse> listUserHistory(String userEmail, int page, int size) {
-    UserEntity user = userRepository.findByEmail(userEmail)
-        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "viewedAt"));
-    Page<VideoView> views = videoViewRepository.findByUserIdOrderByViewedAtDesc(user.getId(), pageable);
-
-    List<VideoResponse> items = new ArrayList<>();
-
-    for (VideoView view : views) {
-      videoRepository.findById(view.getVideoId()).ifPresent(video -> {
-        if (canUserAccessVideo(video, userEmail)) {
-          VideoResponse response = mapToResponse(video);
-          response.setLastViewedAt(view.getViewedAt());
-
-          // Marcar si el usuario tiene reacción
-          videoReactionRepository.findByUserAndVideo(user, video).ifPresent(reaction -> {
-            response.setReactedAt(reaction.getReactedAt());
-            response.setLikedByCurrentUser(reaction.getType() == ReactionType.LIKE);
-            response.setDislikedByCurrentUser(reaction.getType() == ReactionType.DISLIKE);
-          });
-
-          items.add(response);
-        }
-      });
-    }
-
-    return new PageImpl<>(items, pageable, views.getTotalElements());
-  }
-
-  /**
-   * Videos marcados con like por el usuario
-   */
-  public Page<VideoResponse> listLikedVideos(String userEmail, int page, int size) {
-    UserEntity user = userRepository.findByEmail(userEmail)
-        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "reactedAt"));
-    Page<VideoReaction> reactions = videoReactionRepository.findByUserAndType(user, ReactionType.LIKE, pageable);
-
-    List<VideoResponse> items = reactions.stream()
-        .map(reaction -> {
-          VideoResponse response = mapToResponse(reaction.getVideo());
-          response.setLikedByCurrentUser(true);
-          response.setReactedAt(reaction.getReactedAt());
-          return response;
-        })
-        .collect(Collectors.toList());
-
-    return new PageImpl<>(items, pageable, reactions.getTotalElements());
-  }
-
-  /**
    * Subir un video
    */
   public VideoResponse uploadVideo(String userEmail, UploadVideoRequest request, MultipartFile videoFile) {
-    rateLimiterService.checkRate("upload:" + userEmail, 5, 60_000L); // 5 subidas/minuto
-
     // Validar que se envió un archivo
     if (videoFile == null || videoFile.isEmpty()) {
       throw new RuntimeException("Debe proporcionar un archivo de video");
@@ -247,7 +188,6 @@ public class VideoService {
       videoRepository.save(video);
     }
 
-    auditService.log(creator.getId(), "VIDEO_UPLOAD", Map.of("videoId", video.getId(), "title", video.getTitle()));
     return mapToResponse(video);
   }
 
@@ -273,15 +213,10 @@ public class VideoService {
         String userId = user.getId();
 
         // Verificar si el usuario ya vio este video
-        Optional<VideoView> existingView = videoViewRepository.findByUserIdAndVideoId(userId, videoId);
+        boolean alreadyViewed = videoViewRepository.existsByUserIdAndVideoId(userId, videoId);
 
-        if (existingView.isPresent()) {
-          // Actualizar fecha de la última vista
-          VideoView view = existingView.get();
-          view.setViewedAt(new Date());
-          videoViewRepository.save(view);
-        } else {
-          // Registrar la vista por primera vez
+        if (!alreadyViewed) {
+          // Registrar la vista
           VideoView view = new VideoView(userId, videoId);
           videoViewRepository.save(view);
 
@@ -348,7 +283,6 @@ public class VideoService {
    */
   @Transactional
   public void likeVideo(String videoId, String userEmail) {
-    rateLimiterService.checkRate("like:" + userEmail, 20, 60_000L); // 20 likes/minuto
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
 
@@ -368,7 +302,6 @@ public class VideoService {
       } else {
         // Tiene dislike, cambiar a like
         reaction.setType(ReactionType.LIKE);
-        reaction.setReactedAt(new Date());
         videoReactionRepository.save(reaction);
         video.setDislikes_count(Math.max(0, video.getDislikes_count() - 1));
         video.setLikes_count(video.getLikes_count() + 1);
@@ -380,14 +313,12 @@ public class VideoService {
       reaction.setVideo(video);
       reaction.setUser(user);
       reaction.setType(ReactionType.LIKE);
-      reaction.setReactedAt(new Date());
       videoReactionRepository.save(reaction);
       video.setLikes_count(video.getLikes_count() + 1);
       log.info("Usuario {} dio like al video {}", user.getUsername(), videoId);
     }
 
     videoRepository.save(video);
-    auditService.log(user.getId(), "VIDEO_LIKE", Map.of("videoId", videoId));
   }
 
   /**
@@ -396,7 +327,6 @@ public class VideoService {
    */
   @Transactional
   public void dislikeVideo(String videoId, String userEmail) {
-    rateLimiterService.checkRate("dislike:" + userEmail, 20, 60_000L); // 20 dislikes/minuto
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
 
@@ -416,7 +346,6 @@ public class VideoService {
       } else {
         // Tiene like, cambiar a dislike
         reaction.setType(ReactionType.DISLIKE);
-        reaction.setReactedAt(new Date());
         videoReactionRepository.save(reaction);
         video.setLikes_count(Math.max(0, video.getLikes_count() - 1));
         video.setDislikes_count(video.getDislikes_count() + 1);
@@ -428,14 +357,12 @@ public class VideoService {
       reaction.setVideo(video);
       reaction.setUser(user);
       reaction.setType(ReactionType.DISLIKE);
-      reaction.setReactedAt(new Date());
       videoReactionRepository.save(reaction);
       video.setDislikes_count(video.getDislikes_count() + 1);
       log.info("Usuario {} dio dislike al video {}", user.getUsername(), videoId);
     }
 
     videoRepository.save(video);
-    auditService.log(user.getId(), "VIDEO_DISLIKE", Map.of("videoId", videoId));
   }
 
   /**
@@ -464,7 +391,6 @@ public class VideoService {
       videoRepository.save(video);
 
       log.info("Usuario {} removió su reacción del video {}", user.getUsername(), videoId);
-      auditService.log(user.getId(), "VIDEO_REACTION_REMOVED", Map.of("videoId", videoId));
     }
   }
 }

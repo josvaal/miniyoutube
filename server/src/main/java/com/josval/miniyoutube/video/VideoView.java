@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
@@ -26,7 +25,6 @@ public class VideoView {
   private String videoId;
 
   @CreatedDate
-  @Indexed(name = "viewedAt_ttl_idx", expireAfterSeconds = 15552000) // 180 días
   private Date viewedAt;
 
   public VideoView(String userId, String videoId) {

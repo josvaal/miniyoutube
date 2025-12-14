@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,14 +26,11 @@ public class CommentService {
   private final CommentRepository commentRepository;
   private final VideoRepository videoRepository;
   private final UserRepository userRepository;
-  private final com.josval.miniyoutube.common.RateLimiterService rateLimiterService;
-  private final com.josval.miniyoutube.audit.AuditService auditService;
 
   /**
    * Crear un comentario en un video
    */
   public CommentResponse createComment(String videoId, String userEmail, CreateCommentRequest request) {
-    rateLimiterService.checkRate("comment:" + userEmail, 30, 60_000L); // 30 comentarios/minuto
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
 
@@ -64,7 +60,6 @@ public class CommentService {
     comment = commentRepository.save(comment);
 
     log.info("Comentario creado con ID: {} para el video: {}", comment.getId(), videoId);
-    auditService.log(user.getId(), "COMMENT_CREATE", Map.of("videoId", videoId, "commentId", comment.getId()));
 
     return mapToResponse(comment);
   }
@@ -128,7 +123,6 @@ public class CommentService {
     comment = commentRepository.save(comment);
 
     log.info("Comentario actualizado: {}", commentId);
-    auditService.log(user.getId(), "COMMENT_UPDATE", Map.of("commentId", commentId));
 
     return mapToResponse(comment);
   }
@@ -153,7 +147,6 @@ public class CommentService {
     deleteCommentAndReplies(comment);
 
     log.info("Comentario eliminado: {} (con todas sus respuestas)", commentId);
-    auditService.log(user.getId(), "COMMENT_DELETE", Map.of("commentId", commentId));
   }
 
   /**

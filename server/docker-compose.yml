@@ -8,15 +8,12 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-admin123}
       MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-miniyoutube}
-      MONGODB_APP_USERNAME: ${MONGODB_APP_USERNAME:-app_user}
-      MONGODB_APP_PASSWORD: ${MONGODB_APP_PASSWORD:-app_password}
     networks:
       - miniyoutube-network
     ports:
       - "${MONGODB_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "-u", "${MONGODB_USERNAME:-admin}", "-p", "${MONGODB_PASSWORD:-admin123}", "--authenticationDatabase", "admin"]
       interval: 10s
@@ -101,8 +98,8 @@ services:
       MONGODB_HOST: mongodb
       MONGODB_PORT: 27017
       MONGODB_DATABASE: ${MONGODB_DATABASE:-miniyoutube}
-      MONGODB_APP_USERNAME: ${MONGODB_APP_USERNAME:-app_user}
-      MONGODB_APP_PASSWORD: ${MONGODB_APP_PASSWORD:-app_password}
+      MONGODB_USERNAME: ${MONGODB_USERNAME:-admin}
+      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-admin123}
       MONGODB_AUTH_DATABASE: admin
 
       # AWS S3 Configuration (LocalStack)
