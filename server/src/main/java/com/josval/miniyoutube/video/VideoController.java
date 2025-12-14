@@ -129,6 +129,34 @@ public class VideoController {
     return ResponseEntity.ok(comments);
   }
 
+  @GetMapping("/history")
+  public ResponseEntity<Page<VideoResponse>> getHistory(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+      return ResponseEntity.status(401).build();
+    }
+
+    String userEmail = authentication.getName();
+    Page<VideoResponse> history = videoService.listUserHistory(userEmail, page, size);
+    return ResponseEntity.ok(history);
+  }
+
+  @GetMapping("/liked")
+  public ResponseEntity<Page<VideoResponse>> getLikedVideos(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+      return ResponseEntity.status(401).build();
+    }
+
+    String userEmail = authentication.getName();
+    Page<VideoResponse> liked = videoService.listLikedVideos(userEmail, page, size);
+    return ResponseEntity.ok(liked);
+  }
+
   @PostMapping("/{videoId}/like")
   public ResponseEntity<Void> likeVideo(@PathVariable String videoId) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

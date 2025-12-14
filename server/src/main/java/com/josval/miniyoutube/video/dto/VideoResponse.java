@@ -71,4 +71,16 @@ public class VideoResponse {
 
   @Schema(description = "Fecha de creación", example = "2025-11-21T10:30:00Z")
   private Date createdAt;
+
+  @Schema(description = "Fecha de última reproducción por el usuario actual", example = "2025-11-22T15:00:00Z")
+  private Date lastViewedAt;
+
+  @Schema(description = "Indica si el usuario actual ha dado like")
+  private Boolean likedByCurrentUser;
+
+  @Schema(description = "Indica si el usuario actual ha dado dislike")
+  private Boolean dislikedByCurrentUser;
+
+  @Schema(description = "Fecha de la reacción (like/dislike) del usuario actual", example = "2025-11-22T15:10:00Z")
+  private Date reactedAt;
 }

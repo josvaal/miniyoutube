@@ -18,6 +18,8 @@ import Profile from './pages/Profile';
 import ProfileEdit from './pages/ProfileEdit';
 import Channel from './pages/Channel';
 import Subscriptions from './pages/Subscriptions';
+import History from './pages/History';
+import Liked from './pages/Liked';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -36,6 +38,8 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="profile/edit" element={<ProfileEdit />} />
                 <Route path="channel/:userId" element={<Channel />} />
                 <Route path="subscriptions" element={<Subscriptions />} />
+                <Route path="history" element={<History />} />
+                <Route path="liked" element={<Liked />} />
               </Route>
             </Routes>
           </BrowserRouter>

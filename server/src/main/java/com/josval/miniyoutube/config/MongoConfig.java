@@ -28,8 +28,10 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     String host = dotenv.get("MONGODB_HOST", "localhost");
     String port = dotenv.get("MONGODB_PORT", "27017");
     String database = getDatabaseName();
-    String username = dotenv.get("MONGODB_USERNAME", "user");
-    String password = dotenv.get("MONGODB_PASSWORD", "password");
+    String username = dotenv.get("MONGODB_APP_USERNAME",
+        dotenv.get("MONGODB_USERNAME", "app_user"));
+    String password = dotenv.get("MONGODB_APP_PASSWORD",
+        dotenv.get("MONGODB_PASSWORD", "app_password"));
     String authDatabase = dotenv.get("MONGODB_AUTH_DATABASE", "admin");
 
     String connectionString = String.format(

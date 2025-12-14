@@ -11,6 +11,8 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
+import java.util.Date;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -28,4 +30,6 @@ public class VideoReaction {
   private UserEntity user;
 
   private ReactionType type; // LIKE o DISLIKE
+
+  private Date reactedAt;
 }
