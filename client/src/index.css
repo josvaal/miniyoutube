@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -116,5 +117,34 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+    background-image:
+      radial-gradient(circle at 12% 20%, rgba(255, 99, 132, 0.08), transparent 35%),
+      radial-gradient(circle at 80% 0%, rgba(56, 189, 248, 0.08), transparent 32%),
+      radial-gradient(circle at 85% 70%, rgba(120, 255, 214, 0.06), transparent 32%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.08));
+    min-height: 100vh;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+  }
+
+  ::selection {
+    background: rgba(255, 99, 132, 0.25);
+    color: var(--foreground);
+  }
+
+  a {
+    @apply transition-colors;
+  }
+
+  .glass-panel {
+    backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--background) 85%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    box-shadow:
+      0 20px 60px -25px rgba(0, 0, 0, 0.4),
+      0 8px 20px -12px rgba(0, 0, 0, 0.3);
   }
 }

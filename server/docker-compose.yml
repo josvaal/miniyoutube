@@ -47,6 +47,38 @@ services:
       retries: 5
       start_period: 10s
 
+  # One-off job to ensure the S3 bucket exists in LocalStack
+  localstack-bucket-init:
+    image: amazon/aws-cli:latest
+    container_name: miniyoutube-localstack-init
+    restart: "no"
+    depends_on:
+      localstack:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+    command:
+      - -c
+      - |
+        set -e
+        echo "Waiting for LocalStack S3..."
+        for i in $(seq 1 20); do
+          if aws --endpoint-url http://localstack:4566 s3 ls >/dev/null 2>&1; then
+            echo "LocalStack S3 is up."
+            break
+          fi
+          echo "Retrying in 2s..."
+          sleep 2
+        done
+        aws --endpoint-url http://localstack:4566 s3api head-bucket --bucket ${AWS_S3_BUCKET_NAME:-miniyoutube} >/dev/null 2>&1 || \
+          aws --endpoint-url http://localstack:4566 s3 mb s3://${AWS_S3_BUCKET_NAME:-miniyoutube}
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_S3_ACCESS_KEY:-test}
+      AWS_SECRET_ACCESS_KEY: ${AWS_S3_SECRET_KEY:-test}
+      AWS_DEFAULT_REGION: ${AWS_S3_REGION:-us-east-1}
+    networks:
+      - miniyoutube-network
+
   # Spring Boot Application
   app:
     build:
@@ -85,6 +117,8 @@ services:
         condition: service_healthy
       localstack:
         condition: service_healthy
+      localstack-bucket-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s

@@ -6,6 +6,7 @@ import com.josval.miniyoutube.user.dto.RegisterRequest;
 import com.josval.miniyoutube.user.dto.UserResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,23 +22,15 @@ public class AuthController {
   private final UserService userService;
 
   @PostMapping("/register")
-  public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
-    try {
-      UserResponse response = userService.register(request);
-      return ResponseEntity.ok(response);
-    } catch (RuntimeException e) {
-      return ResponseEntity.badRequest().build();
-    }
+  public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+    UserResponse response = userService.register(request);
+    return ResponseEntity.ok(response);
   }
 
   @Operation(summary = "Inicio de sesion", description = "Inicio de sesion con correo y contraseña")
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-    try {
-      LoginResponse response = userService.login(request);
-      return ResponseEntity.ok(response);
-    } catch (Exception e) {
-      return ResponseEntity.badRequest().build();
-    }
+  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    LoginResponse response = userService.login(request);
+    return ResponseEntity.ok(response);
   }
 }

@@ -13,6 +13,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isReady: boolean;
   login: (data: LoginResponse) => void;
   logout: () => void;
 }
@@ -26,6 +27,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     // Cargar usuario y token desde localStorage al montar
@@ -36,6 +38,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
     }
+
+    setIsReady(true);
   }, []);
 
   const login = (data: LoginResponse) => {
@@ -66,6 +70,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         user,
         token,
         isAuthenticated: !!token && !!user,
+        isReady,
         login,
         logout,
       }}

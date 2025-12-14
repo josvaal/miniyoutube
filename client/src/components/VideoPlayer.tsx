@@ -54,7 +54,8 @@ export default function VideoPlayer({ videoUrl, posterUrl, onReady }: VideoPlaye
     const player = videojs(videoElement, {
       autoplay: false,
       controls: true,
-      fill: true,
+      fluid: true, // mantiene relación de aspecto
+      aspectRatio: '16:9',
       preload: 'auto',
       poster: posterUrl,
       liveui: false,
@@ -120,10 +121,14 @@ export default function VideoPlayer({ videoUrl, posterUrl, onReady }: VideoPlaye
   }, [videoUrl, posterUrl, onReady]);
 
   return (
-    <div ref={containerRef} data-vjs-player className="w-full h-full">
+    <div
+      ref={containerRef}
+      data-vjs-player
+      className="relative w-full aspect-video"
+    >
       <video
         ref={videoRef}
-        className="video-js vjs-big-play-centered vjs-fill"
+        className="video-js vjs-big-play-centered vjs-16-9 h-full w-full"
       />
     </div>
   );

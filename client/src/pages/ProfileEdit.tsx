@@ -5,12 +5,19 @@ import { useAuthContext } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Camera, Loader2, ArrowLeft } from 'lucide-react';
+import { Camera, Loader2, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export default function ProfileEdit() {
-  const { isAuthenticated, login } = useAuthContext();
+  const { isAuthenticated, isReady, login } = useAuthContext();
   const navigate = useNavigate();
   const { data: user, isLoading: isLoadingUser } = useCurrentUser();
   const updateUser = useUpdateUser();
@@ -25,10 +32,10 @@ export default function ProfileEdit() {
   const [avatarPreview, setAvatarPreview] = useState<string>('');
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isReady && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isReady, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -76,7 +83,6 @@ export default function ProfileEdit() {
       avatar?: File;
     } = {};
 
-    // Solo enviar los campos que han cambiado
     if (formData.username !== user?.username) {
       updateData.username = formData.username;
     }
@@ -92,7 +98,6 @@ export default function ProfileEdit() {
 
     updateUser.mutate(updateData, {
       onSuccess: (data) => {
-        // Actualizar el contexto de autenticación con los nuevos datos
         if (user) {
           login({
             token: localStorage.getItem('token') || '',
@@ -103,16 +108,15 @@ export default function ProfileEdit() {
             avatarURL: data.avatarURL,
           });
         }
-        // Redirigir al perfil después de guardar
         navigate('/profile');
       },
-      onError: (error) => {
-        console.error('Error al actualizar perfil:', error.message);
+      onError: (err) => {
+        console.error('Error al actualizar perfil:', err.message);
       },
     });
   };
 
-  if (isLoadingUser) {
+  if (!isReady || (!isAuthenticated && isReady) || isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -121,22 +125,16 @@ export default function ProfileEdit() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/profile')}
-        className="mb-4"
-      >
+    <div className="max-w-4xl mx-auto space-y-4">
+      <Button variant="ghost" onClick={() => navigate('/profile')} className="mb-2">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Volver al perfil
       </Button>
 
-      <Card className="w-full">
+      <Card className="w-full border bg-card/80 shadow-xl backdrop-blur">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Editar Perfil</CardTitle>
-          <CardDescription>
-            Actualiza tu información personal y la configuración de tu canal
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold">Editar perfil</CardTitle>
+          <CardDescription>Actualiza tu informacion personal y de canal</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-6">
@@ -152,7 +150,7 @@ export default function ProfileEdit() {
                 <button
                   type="button"
                   onClick={handleAvatarClick}
-                  className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <Camera className="h-8 w-8 text-white" />
                 </button>
@@ -164,9 +162,7 @@ export default function ProfileEdit() {
                   className="hidden"
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
-                Haz clic en la imagen para cambiar tu avatar
-              </p>
+              <p className="text-sm text-muted-foreground">Haz clic en la imagen para cambiar tu avatar</p>
             </div>
 
             {/* Form Fields */}
@@ -216,17 +212,22 @@ export default function ProfileEdit() {
 
             {/* Account Info */}
             <div className="rounded-lg bg-muted p-4 space-y-1">
-              <p className="text-sm font-medium">Información de la cuenta</p>
+              <p className="text-sm font-medium">Informacion de la cuenta</p>
               <p className="text-xs text-muted-foreground">
-                Creado el: {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                }) : 'N/A'}
+                Creado el:{' '}
+                {user?.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })
+                  : 'N/A'}
               </p>
-              <p className="text-xs text-muted-foreground">
-                ID de usuario: {user?.id}
-              </p>
+              <p className="text-xs text-muted-foreground">ID de usuario: {user?.id}</p>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-background px-3 py-1 text-xs text-muted-foreground">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Datos encriptados y sincronizados.
+              </div>
             </div>
 
             {updateUser.isError && (
@@ -236,16 +237,12 @@ export default function ProfileEdit() {
             )}
             {updateUser.isSuccess && (
               <div className="p-3 text-sm text-green-500 bg-green-50 dark:bg-green-950/50 rounded-md">
-                ¡Perfil actualizado exitosamente!
+                Perfil actualizado exitosamente!
               </div>
             )}
           </CardContent>
           <CardFooter className="flex gap-4 pt-4">
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={updateUser.isPending}
-            >
+            <Button type="submit" className="flex-1 rounded-xl" disabled={updateUser.isPending}>
               {updateUser.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

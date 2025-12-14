@@ -10,6 +10,7 @@ import com.josval.miniyoutube.user.dto.UserResponse;
 import java.util.ArrayList;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
@@ -19,6 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -41,12 +43,12 @@ public class UserService implements UserDetailsService {
   public UserResponse register(RegisterRequest request) {
     // Validar que el email no exista
     if (userRepository.existsByEmail(request.getEmail())) {
-      throw new RuntimeException("El email ya está registrado");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya esta registrado");
     }
 
     // Validar que el username no exista
     if (userRepository.existsByUsername(request.getUsername())) {
-      throw new RuntimeException("El username ya está en uso");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya esta en uso");
     }
 
     // Crear nuevo usuario
@@ -122,7 +124,7 @@ public class UserService implements UserDetailsService {
     // Validar username único si se está actualizando
     if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
       if (userRepository.existsByUsername(request.getUsername())) {
-        throw new RuntimeException("El username ya está en uso");
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "El username ya esta en uso");
       }
       user.setUsername(request.getUsername());
     }
@@ -130,7 +132,7 @@ public class UserService implements UserDetailsService {
     // Validar email único si se está actualizando
     if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
       if (userRepository.existsByEmail(request.getEmail())) {
-        throw new RuntimeException("El email ya está registrado");
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya esta registrado");
       }
       user.setEmail(request.getEmail());
     }
