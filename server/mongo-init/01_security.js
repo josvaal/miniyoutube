@@ -131,6 +131,18 @@
     } else {
       console.log(`> Usuario de lectura/escritura ya existe: ${rwUser}`);
     }
+
+    // Asegurar rol AUTENTICADO en usuarios de aplicación existentes
+    try {
+      const usersColl = appDb.collection("users");
+      const res = await usersColl.updateMany(
+        { roles: { $exists: false } },
+        { $set: { roles: ["AUTENTICADO"] } }
+      );
+      console.log(`> Usuarios actualizados con rol AUTENTICADO: ${res.modifiedCount}`);
+    } catch (e) {
+      console.log("> No se pudo actualizar roles en coleccion users:", e.message);
+    }
   } catch (err) {
     console.error("Error aplicando configuración de seguridad:", err.message);
     process.exitCode = 1;
