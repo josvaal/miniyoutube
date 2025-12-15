@@ -3,6 +3,8 @@ package com.josval.miniyoutube.comment;
 import java.util.Date;
 
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
@@ -20,6 +22,10 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "comentarios")
+@CompoundIndexes({
+    @CompoundIndex(name = "video_created_idx", def = "{'video': 1, 'createdAt': -1}"),
+    @CompoundIndex(name = "parent_created_idx", def = "{'parent': 1, 'createdAt': 1}")
+})
 public class CommentEntity {
   @MongoId
   private String id;

@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.Collection;
 
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
@@ -22,6 +24,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = "videos")
+@CompoundIndexes({
+    @CompoundIndex(name = "privacy_processing_created_idx",
+        def = "{'privacyStatus': 1, 'processingStatus': 1, 'createdAt': -1}"),
+    @CompoundIndex(name = "creator_created_idx",
+        def = "{'creator': 1, 'createdAt': -1}")
+})
 public class VideoEntity {
   @MongoId
   private String id;

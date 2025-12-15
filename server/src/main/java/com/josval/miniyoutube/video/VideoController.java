@@ -125,8 +125,19 @@ public class VideoController {
       @PathVariable String videoId,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    Page<CommentResponse> comments = commentService.listVideoComments(videoId, page, size);
-    return ResponseEntity.ok(comments);
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = null;
+    if (authentication != null && authentication.isAuthenticated()
+        && !"anonymousUser".equals(authentication.getPrincipal())) {
+      userEmail = authentication.getName();
+    }
+
+    try {
+      Page<CommentResponse> comments = commentService.listVideoComments(videoId, userEmail, page, size);
+      return ResponseEntity.ok(comments);
+    } catch (RuntimeException e) {
+      return ResponseEntity.status(403).build();
+    }
   }
 
   @PostMapping("/{videoId}/like")

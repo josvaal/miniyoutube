@@ -205,6 +205,10 @@ public class VideoService {
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
 
+    if (!canUserAccessVideo(video, userEmail)) {
+      throw new RuntimeException("No tienes permiso para ver este video");
+    }
+
     // Solo incrementar vistas si el usuario está autenticado y no ha visto el video antes
     if (userEmail != null) {
       UserEntity user = userRepository.findByEmail(userEmail).orElse(null);
@@ -235,6 +239,10 @@ public class VideoService {
    */
   public boolean canUserAccessVideo(VideoEntity video, String userEmail) {
     if (video.getPrivacyStatus() == VideoPrivacyStatus.PUBLIC) {
+      return true;
+    }
+
+    if (video.getPrivacyStatus() == VideoPrivacyStatus.UNLISTED) {
       return true;
     }
 
@@ -286,6 +294,10 @@ public class VideoService {
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
 
+    if (!canUserAccessVideo(video, userEmail)) {
+      throw new RuntimeException("No tienes permiso para interactuar con este video");
+    }
+
     UserEntity user = userRepository.findByEmail(userEmail)
         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -330,6 +342,10 @@ public class VideoService {
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
 
+    if (!canUserAccessVideo(video, userEmail)) {
+      throw new RuntimeException("No tienes permiso para interactuar con este video");
+    }
+
     UserEntity user = userRepository.findByEmail(userEmail)
         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -372,6 +388,10 @@ public class VideoService {
   public void removeReaction(String videoId, String userEmail) {
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
+
+    if (!canUserAccessVideo(video, userEmail)) {
+      throw new RuntimeException("No tienes permiso para interactuar con este video");
+    }
 
     UserEntity user = userRepository.findByEmail(userEmail)
         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));

@@ -7,6 +7,7 @@ import com.josval.miniyoutube.user.UserEntity;
 import com.josval.miniyoutube.user.UserRepository;
 import com.josval.miniyoutube.video.VideoEntity;
 import com.josval.miniyoutube.video.VideoRepository;
+import com.josval.miniyoutube.video.enums.VideoPrivacyStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,6 +37,10 @@ public class CommentService {
 
     UserEntity user = userRepository.findByEmail(userEmail)
         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    if (!canUserAccessVideo(video, user)) {
+      throw new RuntimeException("No tienes permiso para comentar en este video");
+    }
 
     // Si es una respuesta, validar que existe el comentario padre
     CommentEntity parent = null;
@@ -68,9 +73,18 @@ public class CommentService {
    * Listar comentarios principales de un video (scroll infinito)
    * Solo muestra comentarios principales con contador de respuestas
    */
-  public Page<CommentResponse> listVideoComments(String videoId, int page, int size) {
+  public Page<CommentResponse> listVideoComments(String videoId, String userEmail, int page, int size) {
     VideoEntity video = videoRepository.findById(videoId)
         .orElseThrow(() -> new RuntimeException("Video no encontrado"));
+
+    UserEntity user = null;
+    if (userEmail != null) {
+      user = userRepository.findByEmail(userEmail).orElse(null);
+    }
+
+    if (!canUserAccessVideo(video, user)) {
+      throw new RuntimeException("No tienes permiso para ver los comentarios de este video");
+    }
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -83,9 +97,18 @@ public class CommentService {
    * Listar respuestas de un comentario (scroll infinito)
    * Se llama cuando el usuario hace click en "Ver respuestas"
    */
-  public Page<CommentResponse> listCommentReplies(String commentId, int page, int size) {
+  public Page<CommentResponse> listCommentReplies(String commentId, String userEmail, int page, int size) {
     CommentEntity parent = commentRepository.findById(commentId)
         .orElseThrow(() -> new RuntimeException("Comentario no encontrado"));
+
+    UserEntity user = null;
+    if (userEmail != null) {
+      user = userRepository.findByEmail(userEmail).orElse(null);
+    }
+
+    if (!canUserAccessVideo(parent.getVideo(), user)) {
+      throw new RuntimeException("No tienes permiso para ver los comentarios de este video");
+    }
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt"));
 
@@ -189,5 +212,14 @@ public class CommentService {
     }
 
     return response;
+  }
+
+  private boolean canUserAccessVideo(VideoEntity video, UserEntity user) {
+    if (video.getPrivacyStatus() == VideoPrivacyStatus.PUBLIC
+        || video.getPrivacyStatus() == VideoPrivacyStatus.UNLISTED) {
+      return true;
+    }
+
+    return user != null && video.getCreator().getId().equals(user.getId());
   }
 }

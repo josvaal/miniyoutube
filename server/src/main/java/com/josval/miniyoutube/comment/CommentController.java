@@ -26,8 +26,19 @@ public class CommentController {
       @Parameter(description = "ID del comentario") @PathVariable String commentId,
       @Parameter(description = "Número de página (empezando en 0)") @RequestParam(defaultValue = "0") int page,
       @Parameter(description = "Tamaño de página") @RequestParam(defaultValue = "10") int size) {
-    Page<CommentResponse> replies = commentService.listCommentReplies(commentId, page, size);
-    return ResponseEntity.ok(replies);
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = null;
+    if (authentication != null && authentication.isAuthenticated()
+        && !"anonymousUser".equals(authentication.getPrincipal())) {
+      userEmail = authentication.getName();
+    }
+
+    try {
+      Page<CommentResponse> replies = commentService.listCommentReplies(commentId, userEmail, page, size);
+      return ResponseEntity.ok(replies);
+    } catch (RuntimeException e) {
+      return ResponseEntity.status(403).build();
+    }
   }
 
   @GetMapping("/{commentId}")
