@@ -10,7 +10,11 @@ import com.josval.miniyoutube.video.enums.VideoPrivacyStatus;
 import com.josval.miniyoutube.video.enums.VideoProcessingStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.*;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +33,8 @@ public class VideoService {
   private final VideoViewRepository videoViewRepository;
   private final com.josval.miniyoutube.subscription.SubscriptionRepository subscriptionRepository;
   private final VideoReactionRepository videoReactionRepository;
+  @Qualifier("publicMongoTemplate")
+  private final MongoTemplate publicMongoTemplate;
 
   /**
    * Listar videos públicos completados, paginado y ordenado por fecha más reciente
@@ -38,12 +44,16 @@ public class VideoService {
     // Si no hay usuario autenticado, retornar todos los videos públicos normalmente
     if (userEmail == null) {
       Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-      Page<VideoEntity> videos = videoRepository.findByPrivacyStatusAndProcessingStatus(
-          VideoPrivacyStatus.PUBLIC,
-          VideoProcessingStatus.COMPLETED,
-          pageable
-      );
-      return videos.map(this::mapToResponse);
+      Query query = new Query()
+          .addCriteria(Criteria.where("privacyStatus").in(VideoPrivacyStatus.PUBLIC, VideoPrivacyStatus.UNLISTED)
+              .and("processingStatus").is(VideoProcessingStatus.COMPLETED))
+          .with(pageable);
+      List<VideoEntity> list = publicMongoTemplate.find(query, VideoEntity.class, "videos_public");
+      long total = publicMongoTemplate.count(
+          new Query().addCriteria(Criteria.where("privacyStatus").in(VideoPrivacyStatus.PUBLIC, VideoPrivacyStatus.UNLISTED)
+              .and("processingStatus").is(VideoProcessingStatus.COMPLETED)),
+          "videos_public");
+      return new PageImpl<>(list.stream().map(this::mapToResponse).toList(), pageable, total);
     }
 
     // Usuario autenticado: priorizar videos de suscripciones

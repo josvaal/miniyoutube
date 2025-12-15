@@ -5,9 +5,9 @@ services:
     container_name: miniyoutube-mongodb
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-admin123}
-      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-miniyoutube}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME:-user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-db}
     networks:
       - miniyoutube-network
     ports:
@@ -97,9 +97,9 @@ services:
       # MongoDB Configuration
       MONGODB_HOST: mongodb
       MONGODB_PORT: 27017
-      MONGODB_DATABASE: ${MONGODB_DATABASE:-miniyoutube}
-      MONGODB_USERNAME: ${MONGODB_USERNAME:-admin}
-      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-admin123}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-db}
+      MONGODB_USERNAME: ${MONGODB_USERNAME:-user}
+      MONGODB_PASSWORD: ${MONGODB_PASSWORD:-password}
       MONGODB_AUTH_DATABASE: admin
 
       # AWS S3 Configuration (LocalStack)
