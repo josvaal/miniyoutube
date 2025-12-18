@@ -23,24 +23,27 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     return dotenv.get("MONGODB_DATABASE", "miniyoutube");
   }
 
+  private String buildConnectionString(String username, String password, String authDatabase) {
+    String host = dotenv.get("MONGODB_HOST", "localhost");
+    String port = dotenv.get("MONGODB_PORT", "27017");
+    String database = getDatabaseName();
+
+    return String.format(
+        "mongodb://%s:%s@%s:%s/%s?authSource=%s",
+        username, password, host, port, database, authDatabase
+    );
+  }
+
   @Override
   @Bean
   @Primary
   public MongoClient mongoClient() {
-    String host = dotenv.get("MONGODB_HOST", "localhost");
-    String port = dotenv.get("MONGODB_PORT", "27017");
-    String database = getDatabaseName();
     String username = dotenv.get("MONGODB_USERNAME", "user");
     String password = dotenv.get("MONGODB_PASSWORD", "password");
     String authDatabase = dotenv.get("MONGODB_AUTH_DATABASE", "admin");
 
-    String connectionString = String.format(
-        "mongodb://%s:%s@%s:%s/%s?authSource=%s",
-        username, password, host, port, database, authDatabase
-    );
-
     MongoClientSettings settings = MongoClientSettings.builder()
-        .applyConnectionString(new ConnectionString(connectionString))
+        .applyConnectionString(new ConnectionString(buildConnectionString(username, password, authDatabase)))
         .build();
 
     return MongoClients.create(settings);
@@ -52,22 +55,33 @@ public class MongoConfig extends AbstractMongoClientConfiguration {
     return new MongoTemplate(mongoClient(), getDatabaseName());
   }
 
-  @Bean(name = "publicMongoClient")
-  public MongoClient publicMongoClient() {
-    String host = dotenv.get("MONGODB_HOST", "localhost");
-    String port = dotenv.get("MONGODB_PORT", "27017");
-    String database = getDatabaseName();
-    String username = dotenv.get("MONGODB_PUBLIC_USERNAME", "public_user");
-    String password = dotenv.get("MONGODB_PUBLIC_PASSWORD", "public_password");
-    String authDatabase = dotenv.get("MONGODB_AUTH_DATABASE", "admin");
-
-    String connectionString = String.format(
-        "mongodb://%s:%s@%s:%s/%s?authSource=%s",
-        username, password, host, port, database, authDatabase
-    );
+  @Bean(name = "adminMongoClient")
+  public MongoClient adminMongoClient() {
+    String username = dotenv.get("MONGODB_ADMIN_USERNAME", "admin");
+    String password = dotenv.get("MONGODB_ADMIN_PASSWORD", "admin");
+    String authDatabase = dotenv.get("MONGODB_ADMIN_AUTH_DATABASE", "admin");
 
     MongoClientSettings settings = MongoClientSettings.builder()
-        .applyConnectionString(new ConnectionString(connectionString))
+        .applyConnectionString(new ConnectionString(buildConnectionString(username, password, authDatabase)))
+        .build();
+
+    return MongoClients.create(settings);
+  }
+
+  @Bean(name = "adminMongoTemplate")
+  public MongoTemplate adminMongoTemplate() {
+    return new MongoTemplate(adminMongoClient(), getDatabaseName());
+  }
+
+  @Bean(name = "publicMongoClient")
+  public MongoClient publicMongoClient() {
+    // Se reutiliza el usuario de la app para evitar usuarios adicionales en BD.
+    String username = dotenv.get("MONGODB_USERNAME", "app_user");
+    String password = dotenv.get("MONGODB_PASSWORD", "app_password");
+    String authDatabase = dotenv.get("MONGODB_AUTH_DATABASE", "admin");
+
+    MongoClientSettings settings = MongoClientSettings.builder()
+        .applyConnectionString(new ConnectionString(buildConnectionString(username, password, authDatabase)))
         .build();
 
     return MongoClients.create(settings);
