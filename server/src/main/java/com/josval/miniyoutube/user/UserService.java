@@ -7,13 +7,12 @@ import com.josval.miniyoutube.user.dto.LoginResponse;
 import com.josval.miniyoutube.user.dto.RegisterRequest;
 import com.josval.miniyoutube.user.dto.UpdateUserRequest;
 import com.josval.miniyoutube.user.dto.UserResponse;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -38,14 +37,7 @@ public class UserService implements UserDetailsService {
     UserEntity user = userRepository.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
-    var authorities = new ArrayList<SimpleGrantedAuthority>();
-    if (user.getRoles() != null) {
-      for (String role : user.getRoles()) {
-        authorities.add(new SimpleGrantedAuthority(role));
-      }
-    }
-
-    return new User(user.getEmail(), user.getPassword(), authorities);
+    return new User(user.getEmail(), user.getPassword(), Collections.emptyList());
   }
 
   public UserResponse register(RegisterRequest request) {
@@ -65,7 +57,6 @@ public class UserService implements UserDetailsService {
     user.setEmail(request.getEmail());
     user.setPassword(passwordEncoder.encode(request.getPassword()));
     user.setChannelName(request.getChannelName());
-    user.setRoles(java.util.List.of("AUTENTICADO"));
     user.setCreatedAt(new Date());
 
     UserEntity savedUser = userRepository.save(user);
