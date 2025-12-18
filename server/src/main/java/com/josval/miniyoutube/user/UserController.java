@@ -5,6 +5,9 @@ import com.josval.miniyoutube.subscription.dto.SubscriptionResponse;
 import com.josval.miniyoutube.subscription.dto.SubscriptionStatusResponse;
 import com.josval.miniyoutube.user.dto.UpdateUserRequest;
 import com.josval.miniyoutube.user.dto.UserResponse;
+import com.josval.miniyoutube.video.VideoService;
+import com.josval.miniyoutube.video.dto.HistoryItemResponse;
+import com.josval.miniyoutube.video.dto.VideoResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
@@ -22,6 +25,7 @@ public class UserController {
   private final UserService userService;
   private final UserRepository userRepository;
   private final SubscriptionService subscriptionService;
+  private final VideoService videoService;
 
   @GetMapping("/me")
   public ResponseEntity<UserResponse> getCurrentUser() {
@@ -52,6 +56,28 @@ public class UserController {
 
     UserResponse response = userService.updateCurrentUser(currentEmail, request, avatar);
     return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/me/history")
+  public ResponseEntity<Page<HistoryItemResponse>> getMyHistory(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+
+    Page<HistoryItemResponse> history = videoService.getUserHistory(userEmail, page, size);
+    return ResponseEntity.ok(history);
+  }
+
+  @GetMapping("/me/liked")
+  public ResponseEntity<Page<VideoResponse>> getMyLikedVideos(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    String userEmail = authentication.getName();
+
+    Page<VideoResponse> liked = videoService.getLikedVideos(userEmail, page, size);
+    return ResponseEntity.ok(liked);
   }
 
   @PostMapping("/{userId}/subscribe")

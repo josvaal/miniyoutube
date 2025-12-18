@@ -3,6 +3,7 @@ package com.josval.miniyoutube.video;
 import com.josval.miniyoutube.subscription.SubscriptionEntity;
 import com.josval.miniyoutube.user.UserEntity;
 import com.josval.miniyoutube.user.UserRepository;
+import com.josval.miniyoutube.video.dto.HistoryItemResponse;
 import com.josval.miniyoutube.video.dto.UploadVideoRequest;
 import com.josval.miniyoutube.video.dto.VideoResponse;
 import com.josval.miniyoutube.video.enums.ReactionType;
@@ -242,6 +243,54 @@ public class VideoService {
     }
 
     return mapToResponse(video);
+  }
+
+  public Page<HistoryItemResponse> getUserHistory(String userEmail, int page, int size) {
+    UserEntity user = userRepository.findByEmail(userEmail)
+        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "viewedAt"));
+    Page<VideoView> views = videoViewRepository.findByUserIdOrderByViewedAtDesc(user.getId(), pageable);
+
+    List<String> videoIds = views.getContent().stream().map(VideoView::getVideoId).toList();
+    Map<String, VideoEntity> videosById = videoRepository.findAllById(videoIds).stream()
+        .collect(Collectors.toMap(VideoEntity::getId, v -> v));
+
+    List<HistoryItemResponse> content = views.getContent().stream()
+        .map(view -> {
+          VideoEntity video = videosById.get(view.getVideoId());
+          if (video == null) {
+            return null;
+          }
+          HistoryItemResponse item = new HistoryItemResponse();
+          item.setVideo(mapToResponse(video));
+          item.setViewedAt(view.getViewedAt());
+          return item;
+        })
+        .filter(Objects::nonNull)
+        .toList();
+
+    return new PageImpl<>(content, pageable, views.getTotalElements());
+  }
+
+  public Page<VideoResponse> getLikedVideos(String userEmail, int page, int size) {
+    UserEntity user = userRepository.findByEmail(userEmail)
+        .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+    Page<VideoReaction> reactions = videoReactionRepository.findByUserAndType(
+        user,
+        ReactionType.LIKE,
+        pageable
+    );
+
+    List<VideoResponse> content = reactions.getContent().stream()
+        .map(VideoReaction::getVideo)
+        .filter(Objects::nonNull)
+        .map(this::mapToResponse)
+        .toList();
+
+    return new PageImpl<>(content, pageable, reactions.getTotalElements());
   }
 
   /**
