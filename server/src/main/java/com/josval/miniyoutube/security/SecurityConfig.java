@@ -28,6 +28,18 @@ public class SecurityConfig {
   private final AdminAuthenticationProvider adminAuthenticationProvider;
 
   @Bean
+  @Order(0)
+  public SecurityFilterChain adminLoginChain(HttpSecurity http) throws Exception {
+    http
+        .securityMatcher("/api/admin/login")
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+    return http.build();
+  }
+
+  @Bean
   @Order(1)
   public SecurityFilterChain adminSecurityFilterChain(HttpSecurity http) throws Exception {
     http
@@ -36,6 +48,7 @@ public class SecurityConfig {
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+            .requestMatchers("/api/admin/login").permitAll()
             .anyRequest().authenticated()
         )
         .authenticationProvider(adminAuthenticationProvider)

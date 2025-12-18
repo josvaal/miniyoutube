@@ -9,8 +9,6 @@ import {
   Search,
   Bell,
   PlaySquare,
-  History,
-  ThumbsUp,
   X,
   LogOut,
   Settings,
@@ -43,11 +41,6 @@ export default function MainLayout() {
   const mainNavItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/subscriptions', icon: Video, label: 'Suscripciones' },
-  ];
-
-  const libraryItems = [
-    { path: '/history', icon: History, label: 'Historial' },
-    { path: '/liked', icon: ThumbsUp, label: 'Videos que me gustan' },
   ];
 
   const userItems = [
@@ -251,31 +244,6 @@ export default function MainLayout() {
                   </span>
                 </Link>
               ))}
-            </div>
-
-            {/* Library Section */}
-            <div className="border-t pt-3 dark:border-gray-800">
-              <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Biblioteca
-              </p>
-              <div className="space-y-1">
-                {libraryItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                      isActive(item.path)
-                        ? 'bg-accent text-accent-foreground shadow-sm'
-                        : 'hover:bg-accent/50 hover:text-accent-foreground'
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5 transition-transform group-hover:scale-110" />
-                    <span className="transition-transform group-hover:translate-x-0.5">
-                      {item.label}
-                    </span>
-                  </Link>
-                ))}
-              </div>
             </div>
 
             {/* User Section */}

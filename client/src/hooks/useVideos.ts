@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthContext } from '../contexts/AuthContext';
 
-// Tipos de ejemplo (ajusta segĂşn tu API)
+// Tipos de ejemplo (ajusta segun tu API)
 interface Video {
   id: string;
   title: string;
@@ -47,15 +47,10 @@ export interface PageResponse<T> {
   last: boolean;
 }
 
-export interface HistoryItem {
-  video: Video;
-  viewedAt: string;
-}
-
-// API base URL - ajusta segĂşn tu configuraciĂłn
+// API base URL - ajusta segun tu configuracion
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
-// FunciĂłn para obtener todos los videos con paginaciĂłn
+// Funcion para obtener todos los videos con paginacion
 const fetchVideos = async (page: number = 0, size: number = 12): Promise<PageResponse<Video>> => {
   const response = await fetch(`${API_URL}/videos?page=${page}&size=${size}`);
   if (!response.ok) {
@@ -64,7 +59,7 @@ const fetchVideos = async (page: number = 0, size: number = 12): Promise<PageRes
   return response.json();
 };
 
-// FunciĂłn para obtener un video por ID
+// Funcion para obtener un video por ID
 const fetchVideoById = async (id: string): Promise<Video> => {
   const response = await fetch(`${API_URL}/videos/${id}`);
   if (!response.ok) {
@@ -73,7 +68,7 @@ const fetchVideoById = async (id: string): Promise<Video> => {
   return response.json();
 };
 
-// Hook para obtener todos los videos con paginaciĂłn
+// Hook para obtener todos los videos con paginacion
 export function useVideos(page: number = 0, size: number = 12) {
   return useQuery({
     queryKey: ['videos', page, size],
@@ -81,7 +76,7 @@ export function useVideos(page: number = 0, size: number = 12) {
   });
 }
 
-// Hook para obtener un video especĂ­fico
+// Hook para obtener un video especifico
 export function useVideo(id: string) {
   return useQuery({
     queryKey: ['videos', id],
@@ -99,7 +94,7 @@ export function useCreateVideo() {
       const response = await fetch(`${API_URL}/videos`, {
         method: 'POST',
         body: videoData,
-        // No establezcas Content-Type aquĂ­, fetch lo harĂˇ automĂˇticamente con FormData
+        // No establezcas Content-Type aqui; fetch lo gestiona con FormData
       });
 
       if (!response.ok) {
@@ -109,7 +104,7 @@ export function useCreateVideo() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalida la cachĂŠ de videos para refrescar la lista
+      // Invalida la cache de videos para refrescar la lista
       queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
@@ -137,8 +132,12 @@ export function useDeleteVideo() {
   });
 }
 
-// FunciĂłn para obtener videos de un usuario especĂ­fico
-const fetchUserVideos = async (userId: string, page: number = 0, size: number = 10): Promise<{ content: Video[], totalElements: number }> => {
+// Funcion para obtener videos de un usuario especifico
+const fetchUserVideos = async (
+  userId: string,
+  page: number = 0,
+  size: number = 10
+): Promise<{ content: Video[]; totalElements: number }> => {
   const response = await fetch(`${API_URL}/videos?userId=${userId}&page=${page}&size=${size}`);
   if (!response.ok) {
     throw new Error('Error al obtener videos del usuario');
@@ -155,55 +154,7 @@ export function useUserVideos(userId: string | undefined, page: number = 0, size
   });
 }
 
-const fetchHistory = async (token: string, page: number = 0, size: number = 12): Promise<PageResponse<HistoryItem>> => {
-  const response = await fetch(`${API_URL}/users/me/history?page=${page}&size=${size}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Error al obtener historial');
-  }
-
-  return response.json();
-};
-
-const fetchLiked = async (token: string, page: number = 0, size: number = 12): Promise<PageResponse<Video>> => {
-  const response = await fetch(`${API_URL}/users/me/liked?page=${page}&size=${size}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Error al obtener videos que me gustan');
-  }
-
-  return response.json();
-};
-
-export function useHistory(page: number = 0, size: number = 12) {
-  const { token, isAuthenticated } = useAuthContext();
-
-  return useQuery({
-    queryKey: ['history', page, size],
-    queryFn: () => fetchHistory(token!, page, size),
-    enabled: isAuthenticated && !!token,
-  });
-}
-
-export function useLikedVideos(page: number = 0, size: number = 12) {
-  const { token, isAuthenticated } = useAuthContext();
-
-  return useQuery({
-    queryKey: ['liked', page, size],
-    queryFn: () => fetchLiked(token!, page, size),
-    enabled: isAuthenticated && !!token,
-  });
-}
-
-// FunciĂłn para subir un video
+// Funcion para subir un video
 const uploadVideo = async (
   token: string,
   data: UploadVideoData,

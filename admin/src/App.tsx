@@ -861,8 +861,13 @@ function LoginView({ onLogin }: { onLogin: (u: string, p: string) => void }) {
     setLoading(true);
     setError(null);
     try {
-      const authHeader = 'Basic ' + btoa(`${u}:${p}`);
-      const res = await fetch(`${API_BASE}/ping`, { headers: { Authorization: authHeader } });
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: u, password: p }),
+      });
       if (!res.ok) {
         throw new Error('Credenciales inválidas');
       }
